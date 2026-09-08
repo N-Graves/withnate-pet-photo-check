@@ -4,16 +4,28 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pet photo check — demo</title>
-    <!--
-      Development harness AND the integration contract. The markup inside
-      [data-ppc] is what the site's page module needs to emit; the script finds
-      these hooks and fills them in.
 
-      demo.css stands in for the site's own classes so this page is readable on
-      its own. It is not part of the deliverable.
-    -->
     <link rel="stylesheet" href="demo.css" />
     <link rel="stylesheet" href="../dist/pet-photo-check.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pet photo checker",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any modern browser",
+        "browserRequirements": "Requires JavaScript",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
+        "featureList": [
+          "Whether a photo is sharp enough to paint a pet portrait from",
+          "Whether it is big enough, measured from the file header",
+          "Whether the lighting has crushed the shadows or blown the highlights",
+          "Whether the subject is too small in the frame"
+        ],
+        "permissions": "None. The photo is measured in the browser and never uploaded."
+      }
+    </script>
   </head>
   <body>
     <main class="wrap">

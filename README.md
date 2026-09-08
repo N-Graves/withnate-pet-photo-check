@@ -121,11 +121,40 @@ ships real HTML and this fills it in. `demo/index.html` is the working contract.
 The stylesheet defines only `.ppc-` classes, with a smoke check that fails the build if that stops
 being true.
 
+## Structured data
+
+`demo/index.html` carries a static JSON-LD `WebApplication` block. Safe to carry into the site for
+two reasons, both checked in the site's own tooling rather than assumed: `scripts/check.mjs` fails a
+page with a second inline `<script>` but **explicitly exempts `type="application/ld+json"`**, and
+`scripts/seo.mjs` requires structured data to parse and to carry an `@type`, so a malformed block
+fails the build rather than sitting there doing nothing. It claims no rating and no review count.
+
+## Security posture
+
+No server, no upload, no storage, no network call — so the surface is the DOM and the decoder.
+
+- **Everything is built with `createElement` and `textContent`.** No `innerHTML`, no
+  `insertAdjacentHTML`, no interpolation into markup anywhere in `src/`. No string from the file
+  reaches the page at all: the only things rendered are this module's own literals and formatted
+  numbers.
+- **The decode is sized from the header, before any decoding happens.** A very large image is now
+  decoded straight to a reduced size rather than decoded at full size and then shrunk. The earlier
+  order allocated the whole RGBA buffer *before* the guard could fire, which is the entire hazard —
+  a 100 megapixel photograph is 400MB as RGBA and takes a phone down.
+- **Absurd declared dimensions are refused outright**, above 500 megapixels: far past any camera,
+  and well short of what a crafted header can claim. The refusal says what to do instead.
+- Hostile-input parsing lives in the core, where the header bytes are read, and is covered by that
+  package's own bounds and caps.
+
+There is no byte-size cap on the intake, deliberately. Dimensions are the risk here rather than file
+size, and the header gives those before a single pixel is decoded — a byte cap would refuse a
+legitimate large photograph while a small crafted file sailed straight past it.
+
 ## Testing
 
 ```bash
 npm run lint    # tsc --noEmit
-npm test        # 43 tests
+npm test        # 48 tests
 npm run smoke   # 20 checks against the built bundle
 npm run demo    # serves demo/ on :4174
 ```

@@ -1,14 +1,3 @@
-/**
- * Pet photo check - entry point.
- *
- * Loaded on one page, does nothing on every other. The markup is not built
- * here; the page ships real HTML and this fills it in, because content must
- * never need JavaScript to become visible.
- *
- * Nothing is uploaded, nothing is stored, and no request leaves the page. The
- * photograph is decoded in the tab, measured, and dropped.
- */
-
 import {
   attachIntake,
   measureImage,
@@ -16,7 +5,7 @@ import {
   readHeaderBytes,
 } from "@nasdigitaluk/withnate-tool-core";
 import { assess } from "./assess.js";
-import { measureFile } from "./decode.js";
+import { REFUSE_ABOVE_PIXELS, measureFile } from "./decode.js";
 import { renderAssessment } from "./render.js";
 
 mount("[data-ppc]", ({ root }) => {
@@ -43,9 +32,7 @@ mount("[data-ppc]", ({ root }) => {
       setBusy(true);
 
       void (async () => {
-        // True dimensions come from the header, never from the decode - a very
-        // large photo is decoded at a reduced size and judging its resolution
-        // on that would report the size we chose rather than the size it is.
+
         const header = measureImage(await readHeaderBytes(file));
         if (!header) {
           showError(
@@ -54,7 +41,14 @@ mount("[data-ppc]", ({ root }) => {
           return;
         }
 
-        const m = await measureFile(file);
+        if (header.width * header.height > REFUSE_ABOVE_PIXELS) {
+          showError(
+            "That image declares far more pixels than any camera produces, and opening it would be enough to bring the tab down. If it is a real photograph, save a copy at a normal size and try that.",
+          );
+          return;
+        }
+
+        const m = await measureFile(file, { width: header.width, height: header.height });
         results.replaceChildren(
           renderAssessment(
             assess({
@@ -68,9 +62,7 @@ mount("[data-ppc]", ({ root }) => {
         );
         setBusy(false);
       })().catch(() => {
-        // Decoding is where this realistically fails: a corrupt file, a format
-        // the browser will not take, or an image too large for the device.
-        // Silence here is indistinguishable from a broken tool.
+
         showError(
           "That photo could not be opened. It may be damaged, or too large for this device — try a different one.",
         );

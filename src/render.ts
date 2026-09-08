@@ -1,17 +1,3 @@
-/**
- * Showing the verdict.
- *
- * Built with createElement and textContent, like the site's own scripts, which
- * also removes the question of escaping - no string from outside this module
- * ever gets a chance to be markup.
- *
- * The tone matters more here than in the other tools. Somebody has just been
- * told their photograph of their dog is not good enough, and the useful reply
- * is what to do about it rather than a score. Every failing check carries
- * advice; passing ones deliberately carry none, so there is nothing to read
- * when there is nothing to fix.
- */
-
 import type { Assessment, Check, Verdict } from "./assess.js";
 
 type Attrs = Record<string, string | boolean | number>;
@@ -41,7 +27,6 @@ const VERDICT_WORD: Record<Verdict, string> = {
   bad: "Needs another go",
 };
 
-/** Reuses the site's chip classes rather than inventing a second palette. */
 const VERDICT_CLASS: Record<Verdict, string> = {
   good: "fam fam-4",
   warn: "fam fam-2",
@@ -56,8 +41,7 @@ const checkRow = (c: Check): HTMLElement =>
       "div",
       { class: "ppc-check-head" },
       h("span", { class: "ppc-check-label" }, c.label),
-      // The word is the signal, not the colour. Colour alone fails anyone who
-      // cannot distinguish these two, and this is a pass/fail judgement.
+
       h("span", { class: VERDICT_CLASS[c.verdict] }, c.advisory ? "Have a think" : VERDICT_WORD[c.verdict]),
     ),
     h("p", { class: "ppc-check-detail" }, c.detail),
