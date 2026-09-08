@@ -15,8 +15,7 @@ const S = size(96, 96);
 
 describe("toLuma", () => {
   it("uses BT.601 weights rather than a channel average", () => {
-    // Pure green and pure blue have the same mean RGB and nothing like the
-    // same apparent brightness. A plain average would call them equal.
+
     const green = toLuma(rgbaOf(size(1, 1), 0, 255, 0), size(1, 1));
     const blue = toLuma(rgbaOf(size(1, 1), 0, 0, 255), size(1, 1));
     expect(green[0]).toBeCloseTo(149.685, 2);
@@ -48,8 +47,7 @@ describe("gaussianBlur", () => {
 
 describe("sharpness", () => {
   it("falls monotonically as the image is blurred", () => {
-    // The property the whole check rests on. If this is not monotonic the
-    // number cannot be used to tell a soft photo from a sharp one.
+
     const src = noise(S, 5);
     const scores = [0, 0.8, 1.5, 2.5, 4].map((sigma) =>
       sigma === 0 ? sharpness(src, S) : sharpness(blur(src, S, sigma), S),
@@ -60,14 +58,11 @@ describe("sharpness", () => {
   });
 
   it("is unchanged by contrast, which is the reason for the normalisation", () => {
-    // Raw Laplacian variance - the usual choice - scales with contrast, so a
-    // punchy small photo outscores a soft large one and the number means
-    // nothing across a mixed set. Dividing by the overall spread removes it.
+
     const src = noise(S, 6, 80, 176);
     const punchy = scaleContrast(src, 2);
     expect(sharpness(punchy, S)).toBeCloseTo(sharpness(src, S), 4);
 
-    // The un-normalised measure, for contrast, genuinely does move.
     const highpassSpread = (a: Float32Array): number => {
       const b = gaussianBlur(a, S, 1.4);
       const h = new Float32Array(a.length);
@@ -78,8 +73,7 @@ describe("sharpness", () => {
   });
 
   it("scores a smooth gradient far below noise, despite similar contrast", () => {
-    // A gradient has plenty of spread and almost no detail. Anything claiming
-    // to measure sharpness has to separate those two.
+
     const g = gradient(S);
     const n = noise(S, 8);
     expect(stdDev(g)).toBeGreaterThan(50);
@@ -113,8 +107,7 @@ describe("exposure", () => {
   });
 
   it("does not call an ordinary dark image clipped", () => {
-    // Dark and crushed are different faults with different advice, so the
-    // measure has to separate them.
+
     const e = exposure(noise(S, 10, 20, 90));
     expect(e.mean).toBeLessThan(90);
     expect(e.clippedLow).toBeLessThan(0.01);
@@ -142,8 +135,7 @@ describe("detailBox", () => {
   it("finds a textured patch on a flat field", () => {
     const box = { x: 30, y: 20, width: 24, height: 30 };
     const b = detailBox(patch(S, box), S, 0.9);
-    // Central differences smear the edge by a pixel either side, so the box is
-    // allowed to be slightly generous rather than exact.
+
     expect(b.x).toBeGreaterThanOrEqual(box.x - 2);
     expect(b.x + b.width).toBeLessThanOrEqual(box.x + box.width + 2);
     expect(b.y).toBeGreaterThanOrEqual(box.y - 2);

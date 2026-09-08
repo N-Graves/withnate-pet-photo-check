@@ -281,108 +281,78 @@
   var RANGE_FLAT = 70;
   var FRAMING_TIGHT = 0.16;
   var pct = (v) => `${Math.round(v * 100)}%`;
+  var named = (id, label) => (body) => ({ id, label, ...body });
+  var banded = (value, good, warn, bodies) => value >= good ? bodies[0] : value >= warn ? bodies[1] : bodies[2];
   var assess = (f) => {
-    const checks = [];
-    const longEdge = Math.max(f.width, f.height);
-    checks.push(
-      longEdge >= RES_SMALL ? {
-        id: "resolution",
-        label: "Size",
-        verdict: "good",
-        detail: `${f.width.toLocaleString()} \xD7 ${f.height.toLocaleString()} pixels \u2014 plenty to work from.`
-      } : longEdge >= RES_TINY ? {
-        id: "resolution",
-        label: "Size",
-        verdict: "warn",
-        detail: `${f.width.toLocaleString()} \xD7 ${f.height.toLocaleString()} pixels \u2014 on the small side.`,
-        advice: "Usable, but if you have the original rather than a copy sent through a messaging app, send that instead. Apps shrink photos silently."
-      } : {
-        id: "resolution",
-        label: "Size",
-        verdict: "bad",
-        detail: `${f.width.toLocaleString()} \xD7 ${f.height.toLocaleString()} pixels \u2014 too small.`,
-        advice: "This is about the size of a web thumbnail. Look for the original on your phone or camera; it will be several times bigger."
-      }
-    );
-    checks.push(
-      f.sharpness >= SHARP_SOFT ? {
-        id: "sharpness",
-        label: "Focus",
-        verdict: "good",
-        detail: "Sharp where it matters."
-      } : f.sharpness >= SHARP_BLURRY ? {
-        id: "sharpness",
-        label: "Focus",
-        verdict: "warn",
-        detail: "A little soft.",
-        advice: "Workable, but a sharper one would give more to paint from \u2014 fur and eyes especially. Try a few shots in better light and pick the crispest."
-      } : {
-        id: "sharpness",
-        label: "Focus",
-        verdict: "bad",
-        detail: "Out of focus.",
-        advice: "There is not enough detail here to paint from. Take another with the camera still and your pet still \u2014 tapping the screen on their face before you shoot helps."
-      }
-    );
+    const size = `${f.width.toLocaleString()} \xD7 ${f.height.toLocaleString()} pixels`;
     const e = f.exposure;
-    if (e.clippedLow >= CLIP_BAD) {
-      checks.push({
-        id: "exposure",
-        label: "Lighting",
-        verdict: "bad",
-        detail: `${pct(e.clippedLow)} of the photo is solid black with nothing in it.`,
-        advice: "Shooting against a window does this. Turn so the light falls on your pet rather than behind them, or step outside on an overcast day \u2014 that is the kindest light there is."
-      });
-    } else if (e.clippedHigh >= CLIP_BAD) {
-      checks.push({
-        id: "exposure",
-        label: "Lighting",
-        verdict: "bad",
-        detail: `${pct(e.clippedHigh)} of the photo is blown out to pure white.`,
-        advice: "Bright sun does this. Move into open shade and try again."
-      });
-    } else if (e.mean < VERY_DARK || e.mean > VERY_BRIGHT) {
-      checks.push({
-        id: "exposure",
-        label: "Lighting",
-        verdict: "bad",
-        detail: e.mean < VERY_DARK ? "Far too dark." : "Far too bright.",
-        advice: "Try again in daylight, indoors near a window but not pointing at it."
-      });
-    } else if (e.mean < DARK || e.mean > BRIGHT || e.clippedLow >= CLIP_WARN || e.clippedHigh >= CLIP_WARN) {
-      checks.push({
-        id: "exposure",
-        label: "Lighting",
-        verdict: "warn",
-        detail: e.mean < DARK ? "Rather dark." : "Rather bright.",
-        advice: "Usable, but more even light would show more of their coat."
-      });
-    } else {
-      checks.push({
-        id: "exposure",
-        label: "Lighting",
-        verdict: "good",
-        detail: "Well lit, with detail at both ends."
-      });
-    }
-    checks.push(
-      e.range >= RANGE_FLAT ? { id: "contrast", label: "Contrast", verdict: "good", detail: "Good tonal range." } : {
-        id: "contrast",
-        label: "Contrast",
-        verdict: "warn",
-        detail: "Flat and a bit grey.",
-        advice: "Often a photo taken through glass, or a screenshot of a photo rather than the photo itself. The original file will have more in it."
-      }
-    );
+    const checks = [
+      named("resolution", "Size")(
+        banded(Math.max(f.width, f.height), RES_SMALL, RES_TINY, [
+          { verdict: "good", detail: `${size} \u2014 plenty to work from.` },
+          {
+            verdict: "warn",
+            detail: `${size} \u2014 on the small side.`,
+            advice: "Usable, but if you have the original rather than a copy sent through a messaging app, send that instead. Apps shrink photos silently."
+          },
+          {
+            verdict: "bad",
+            detail: `${size} \u2014 too small.`,
+            advice: "This is about the size of a web thumbnail. Look for the original on your phone or camera; it will be several times bigger."
+          }
+        ])
+      ),
+      named("sharpness", "Focus")(
+        banded(f.sharpness, SHARP_SOFT, SHARP_BLURRY, [
+          { verdict: "good", detail: "Sharp where it matters." },
+          {
+            verdict: "warn",
+            detail: "A little soft.",
+            advice: "Workable, but a sharper one would give more to paint from \u2014 fur and eyes especially. Try a few shots in better light and pick the crispest."
+          },
+          {
+            verdict: "bad",
+            detail: "Out of focus.",
+            advice: "There is not enough detail here to paint from. Take another with the camera still and your pet still \u2014 tapping the screen on their face before you shoot helps."
+          }
+        ])
+      ),
+      named("exposure", "Lighting")(
+        e.clippedLow >= CLIP_BAD ? {
+          verdict: "bad",
+          detail: `${pct(e.clippedLow)} of the photo is solid black with nothing in it.`,
+          advice: "Shooting against a window does this. Turn so the light falls on your pet rather than behind them, or step outside on an overcast day \u2014 that is the kindest light there is."
+        } : e.clippedHigh >= CLIP_BAD ? {
+          verdict: "bad",
+          detail: `${pct(e.clippedHigh)} of the photo is blown out to pure white.`,
+          advice: "Bright sun does this. Move into open shade and try again."
+        } : e.mean < VERY_DARK || e.mean > VERY_BRIGHT ? {
+          verdict: "bad",
+          detail: e.mean < VERY_DARK ? "Far too dark." : "Far too bright.",
+          advice: "Try again in daylight, indoors near a window but not pointing at it."
+        } : e.mean < DARK || e.mean > BRIGHT || e.clippedLow >= CLIP_WARN || e.clippedHigh >= CLIP_WARN ? {
+          verdict: "warn",
+          detail: e.mean < DARK ? "Rather dark." : "Rather bright.",
+          advice: "Usable, but more even light would show more of their coat."
+        } : { verdict: "good", detail: "Well lit, with detail at both ends." }
+      ),
+      named("contrast", "Contrast")(
+        e.range >= RANGE_FLAT ? { verdict: "good", detail: "Good tonal range." } : {
+          verdict: "warn",
+          detail: "Flat and a bit grey.",
+          advice: "Often a photo taken through glass, or a screenshot of a photo rather than the photo itself. The original file will have more in it."
+        }
+      )
+    ];
     if (f.detail.coverage < FRAMING_TIGHT) {
-      checks.push({
-        id: "framing",
-        label: "Framing",
-        verdict: "warn",
-        advisory: true,
-        detail: `The detail sits in about ${pct(f.detail.coverage)} of the frame. Is your pet quite small in this one?`,
-        advice: "If so, closer is better \u2014 head and shoulders filling most of the frame gives the most to work from. If they already fill it, ignore this."
-      });
+      checks.push(
+        named("framing", "Framing")({
+          verdict: "warn",
+          advisory: true,
+          detail: `The detail sits in about ${pct(f.detail.coverage)} of the frame. Is your pet quite small in this one?`,
+          advice: "If so, closer is better \u2014 head and shoulders filling most of the frame gives the most to work from. If they already fill it, ignore this."
+        })
+      );
     }
     const scored = checks.filter((c) => !c.advisory);
     const overall = scored.some((c) => c.verdict === "bad") ? "bad" : scored.some((c) => c.verdict === "warn") ? "warn" : "good";
@@ -535,6 +505,7 @@
   var TILE = 256;
   var GRID = 4;
   var MAX_DECODE_PIXELS = 4e7;
+  var REFUSE_ABOVE_PIXELS = 5e8;
   var STATS_LONG_EDGE = 512;
   var context = (w, h2) => {
     const canvas = document.createElement("canvas");
@@ -579,17 +550,14 @@
     const luma = toLuma(data.data, size);
     return { exposure: exposure(luma), detail: detailBox(luma, size) };
   };
-  var measureFile = async (file) => {
-    let bitmap = await createImageBitmap(file);
-    if (bitmap.width * bitmap.height > MAX_DECODE_PIXELS) {
-      const scale = Math.sqrt(MAX_DECODE_PIXELS / (bitmap.width * bitmap.height));
-      const reduced = await createImageBitmap(file, {
-        resizeWidth: Math.round(bitmap.width * scale),
-        resizeQuality: "high"
-      });
-      bitmap.close();
-      bitmap = reduced;
-    }
+  var decodeWidthFor = (natural) => {
+    const pixels = natural.width * natural.height;
+    if (!(pixels > MAX_DECODE_PIXELS)) return null;
+    return Math.max(1, Math.round(natural.width * Math.sqrt(MAX_DECODE_PIXELS / pixels)));
+  };
+  var measureFile = async (file, natural) => {
+    const resizeWidth = natural ? decodeWidthFor(natural) : null;
+    const bitmap = resizeWidth === null ? await createImageBitmap(file) : await createImageBitmap(file, { resizeWidth, resizeQuality: "high" });
     try {
       return {
         decodedWidth: bitmap.width,
@@ -634,8 +602,6 @@
       "div",
       { class: "ppc-check-head" },
       h("span", { class: "ppc-check-label" }, c.label),
-      // The word is the signal, not the colour. Colour alone fails anyone who
-      // cannot distinguish these two, and this is a pass/fail judgement.
       h("span", { class: VERDICT_CLASS[c.verdict] }, c.advisory ? "Have a think" : VERDICT_WORD[c.verdict])
     ),
     h("p", { class: "ppc-check-detail" }, c.detail),
@@ -692,7 +658,13 @@
             );
             return;
           }
-          const m = await measureFile(file);
+          if (header.width * header.height > REFUSE_ABOVE_PIXELS) {
+            showError(
+              "That image declares far more pixels than any camera produces, and opening it would be enough to bring the tab down. If it is a real photograph, save a copy at a normal size and try that."
+            );
+            return;
+          }
+          const m = await measureFile(file, { width: header.width, height: header.height });
           results.replaceChildren(
             renderAssessment(
               assess({

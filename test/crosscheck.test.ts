@@ -1,27 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { gaussianBlur, sharpness, stdDev } from "../src/metrics.js";
 
-/**
- * Agreement with the reference implementation the thresholds were set from.
- *
- * The sharpness thresholds in assess.ts come from measuring real photographs,
- * and that measuring was done in Python with numpy and PIL, because there is
- * no JPEG decoder in Node here. That calibration only transfers if this
- * implementation computes the same number as the one that produced it - so
- * this pins it against a value taken from that script.
- *
- * The input is integer-only by construction, so there is no floating point in
- * it and any disagreement is genuinely in the algorithm rather than in how two
- * languages happen to round a sine.
- *
- * Reference, from numpy float64:
- *   std_luma      73.7024674684
- *   std_highpass  34.5879232901
- *   sharpness      0.4692912528
- *
- * This runs on Float32Array, so agreement is expected to about six decimals
- * rather than exactly.
- */
 describe("agreement with the calibration reference", () => {
   const W = 128;
   const H = 128;

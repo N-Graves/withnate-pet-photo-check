@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { assess, type Facts } from "../src/assess.js";
 
-/** A photo that passes everything, which each test then breaks one part of. */
 const good = (): Facts => ({
   width: 4000,
   height: 3000,
-  sharpness: 0.61, // the real 12MP customer photo from the calibration set
+  sharpness: 0.61,
   exposure: { mean: 140, clippedLow: 0.001, clippedHigh: 0, range: 198 },
   detail: { x: 0, y: 0, width: 3000, height: 2400, coverage: 0.6 },
 });
@@ -31,8 +30,7 @@ describe("sharpness, against the measured calibration", () => {
   });
 
   it("passes that photo blurred at sigma 0.8, which measured 0.31", () => {
-    // Right on the line by design. Softness this mild is workable and saying
-    // otherwise would fail photographs people would be happy with.
+
     expect(verdictOf({ ...good(), sharpness: 0.31 }, "sharpness")).toBe("good");
   });
 
@@ -49,9 +47,7 @@ describe("sharpness, against the measured calibration", () => {
   });
 
   it("passes every other photograph in the real set", () => {
-    // The measured best-tile scores. One of the fourteen fails and it is the
-    // thumbnail above; if a threshold change starts failing more of these,
-    // it is failing photographs this business actually works from.
+
     const measured = [0.202, 0.219, 0.2449, 0.2517, 0.2802, 0.2934, 0.3044, 0.3272, 0.338, 0.3411, 0.4293, 0.482, 0.6128];
     const bad = measured.filter((s) => verdictOf({ ...good(), sharpness: s }, "sharpness") === "bad");
     expect(bad).toEqual([]);
@@ -83,7 +79,7 @@ describe("lighting", () => {
   });
 
   it("fails a photo crushed to a silhouette", () => {
-    // A black dog shot against a window. The commonest real failure there is.
+
     expect(verdictOf(withExposure({ clippedLow: 0.3, mean: 60 }), "exposure")).toBe("bad");
   });
 
@@ -92,8 +88,7 @@ describe("lighting", () => {
   });
 
   it("separates dark from crushed, because the advice differs", () => {
-    // Dark with detail still in it is a warning; dark with the shadows gone
-    // is a retake. Treating them the same gives the wrong instruction.
+
     expect(verdictOf(withExposure({ mean: 48, clippedLow: 0.005 }), "exposure")).toBe("warn");
     expect(verdictOf(withExposure({ mean: 48, clippedLow: 0.2 }), "exposure")).toBe("bad");
   });
@@ -117,9 +112,7 @@ describe("framing", () => {
   });
 
   it("asks a question, and does not drag the overall verdict down", () => {
-    // The measurement assumes an animal has more texture than its background,
-    // which a busy carpet defeats. A confident wrong answer here is worse
-    // than no answer, so it is advisory and phrased as a question.
+
     const tight = { ...good(), detail: { x: 0, y: 0, width: 400, height: 300, coverage: 0.1 } };
     const a = assess(tight);
     const framing = a.checks.find((c) => c.id === "framing")!;

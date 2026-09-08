@@ -1,18 +1,4 @@
-/**
- * The canvas adapter: a File in, a set of measurements out.
- *
- * This is the only part that touches the browser. Everything with a judgement
- * in it lives in metrics.ts and assess.ts as pure functions, which is why the
- * thresholds could be calibrated against real photographs in a completely
- * different language and still transfer.
- *
- * Deliberately kept in this repo rather than pushed into the shared core. This
- * is the first tool that needs pixels at all; the core grows by extraction
- * when a SECOND tool needs something, and the watermarker will be that second
- * tool. Guessing the shared surface from one caller is how the nine MCP
- * servers in this project ended up with three drifting copies of the same
- * module.
- */
+
 
 import {
   detailBox,
@@ -24,32 +10,20 @@ import {
   type Size,
 } from "./metrics.js";
 
-/**
- * Tile geometry, and it MUST match the calibration script that set the
- * thresholds: a 4x4 grid of 256px tiles, sampled at native resolution, best
- * score wins. Changing either number silently invalidates every threshold in
- * assess.ts.
- */
+
 const TILE = 256;
 const GRID = 4;
 
-/**
- * Above this, decode at a reduced size. A 100 megapixel image is 400MB as
- * RGBA and will fail on a phone; 40 is roughly 160MB, which is survivable.
- * Anything this large is far past the point where resolution is in question.
- */
+
 const MAX_DECODE_PIXELS = 40e6;
 
-/** Whole-frame statistics are measured here. Exposure and layout do not need detail. */
+export const REFUSE_ABOVE_PIXELS = 500e6;
+
+
 const STATS_LONG_EDGE = 512;
 
 export interface Measured {
-  /**
-   * The size actually analysed, which is REDUCED for a very large image.
-   * Never use this for the resolution check - that has to come from the file
-   * header, or a 100 megapixel photo would be judged on the size we chose to
-   * decode it at rather than the size it is.
-   */
+  
   decodedWidth: number;
   decodedHeight: number;
   sharpness: number;
@@ -66,16 +40,7 @@ const context = (w: number, h: number): CanvasRenderingContext2D => {
   return ctx;
 };
 
-/**
- * Sharpness from the sharpest tile, at native resolution.
- *
- * Two reasons it works this way rather than measuring the whole frame. Scaling
- * the image down destroys exactly the high-frequency detail being measured, so
- * a blurry photo and a sharp one converge; and a shallow depth of field blurs
- * the background ON PURPOSE, so a whole-frame average marks a good portrait
- * down for the thing that makes it good. Taking the best tile answers the
- * question actually being asked - is anything in this photograph sharp.
- */
+
 const bestTileSharpness = (bitmap: ImageBitmap): number => {
   const { width: w, height: h } = bitmap;
 
@@ -94,8 +59,8 @@ const bestTileSharpness = (bitmap: ImageBitmap): number => {
     for (let gx = 0; gx < GRID; gx += 1) {
       const sx = Math.round(((w - TILE) * gx) / (GRID - 1));
       const sy = Math.round(((h - TILE) * gy) / (GRID - 1));
-      // 1:1 - source rectangle and destination rectangle are the same size,
-      // so no resampling happens and the detail survives.
+      
+      
       ctx.drawImage(bitmap, sx, sy, TILE, TILE, 0, 0, TILE, TILE);
       const data = ctx.getImageData(0, 0, TILE, TILE);
       const score = sharpness(toLuma(data.data, size), size);
@@ -117,17 +82,18 @@ const wholeFrameStats = (bitmap: ImageBitmap): { exposure: Exposure; detail: Box
   return { exposure: exposure(luma), detail: detailBox(luma, size) };
 };
 
-export const measureFile = async (file: File): Promise<Measured> => {
-  let bitmap = await createImageBitmap(file);
-  if (bitmap.width * bitmap.height > MAX_DECODE_PIXELS) {
-    const scale = Math.sqrt(MAX_DECODE_PIXELS / (bitmap.width * bitmap.height));
-    const reduced = await createImageBitmap(file, {
-      resizeWidth: Math.round(bitmap.width * scale),
-      resizeQuality: "high",
-    });
-    bitmap.close();
-    bitmap = reduced;
-  }
+export const decodeWidthFor = (natural: Size): number | null => {
+  const pixels = natural.width * natural.height;
+  if (!(pixels > MAX_DECODE_PIXELS)) return null;
+  return Math.max(1, Math.round(natural.width * Math.sqrt(MAX_DECODE_PIXELS / pixels)));
+};
+
+export const measureFile = async (file: File, natural?: Size): Promise<Measured> => {
+  const resizeWidth = natural ? decodeWidthFor(natural) : null;
+  const bitmap =
+    resizeWidth === null
+      ? await createImageBitmap(file)
+      : await createImageBitmap(file, { resizeWidth, resizeQuality: "high" });
   try {
     return {
       decodedWidth: bitmap.width,
@@ -136,8 +102,8 @@ export const measureFile = async (file: File): Promise<Measured> => {
       ...wholeFrameStats(bitmap),
     };
   } finally {
-    // Without this the decoded bitmap stays alive until the collector gets to
-    // it, and a few large photos in a row is hundreds of megabytes.
+    
+    
     bitmap.close();
   }
 };

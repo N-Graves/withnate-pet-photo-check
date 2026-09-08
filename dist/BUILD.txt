@@ -1,5 +1,5 @@
 withnate-pet-photo-check v0.1.0
-js   24596 bytes
+js   24411 bytes
 css  2395 bytes
 
 Drop both into the site's assets directory and reference them from the
