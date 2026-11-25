@@ -89,13 +89,13 @@ export const assess = (f: Facts): Assessment => {
           verdict: "warn",
           detail: "A little soft.",
           advice:
-            "Workable, but a sharper one would give more to paint from — fur and eyes especially. Try a few shots in better light and pick the crispest.",
+            "Workable, but a sharper one would give more to print from — fine detail especially. Try a few shots in better light and pick the crispest.",
         },
         {
           verdict: "bad",
           detail: "Out of focus.",
           advice:
-            "There is not enough detail here to paint from. Take another with the camera still and your pet still — tapping the screen on their face before you shoot helps.",
+            "There is not enough detail here to print from. Take another with the camera still and your subject still — tapping the screen on the subject before you shoot helps.",
         },
       ]),
     ),
@@ -106,7 +106,7 @@ export const assess = (f: Facts): Assessment => {
             verdict: "bad",
             detail: `${pct(e.clippedLow)} of the photo is solid black with nothing in it.`,
             advice:
-              "Shooting against a window does this. Turn so the light falls on your pet rather than behind them, or step outside on an overcast day — that is the kindest light there is.",
+              "Shooting against a window does this. Turn so the light falls on your subject rather than behind them, or step outside on an overcast day — that is the kindest light there is.",
           }
         : e.clippedHigh >= CLIP_BAD
           ? {
@@ -149,7 +149,7 @@ export const assess = (f: Facts): Assessment => {
       named("framing", "Framing")({
         verdict: "warn",
         advisory: true,
-        detail: `The detail sits in about ${pct(f.detail.coverage)} of the frame. Is your pet quite small in this one?`,
+        detail: `The detail sits in about ${pct(f.detail.coverage)} of the frame. Is your subject quite small in this one?`,
         advice:
           "If so, closer is better — head and shoulders filling most of the frame gives the most to work from. If they already fill it, ignore this.",
       }),
@@ -171,6 +171,6 @@ export const assess = (f: Facts): Assessment => {
         ? "This will work well."
         : overall === "warn"
           ? "This will work, with a caveat or two."
-          : "This one will hold the portrait back.",
+          : "This one will hold the print back.",
   };
 };

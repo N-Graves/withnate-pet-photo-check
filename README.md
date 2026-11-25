@@ -1,7 +1,7 @@
 # withnate-pet-photo-check
 
-Check whether the photo you are about to send for a custom pet portrait will actually work, before
-you send it.
+Check whether a photo is good enough to print before you send it. It was written for custom pet
+portraits and works for any photo with a clear subject.
 
 **Runs entirely in the browser. The photo never leaves your device** — which matters here more than
 convenience, because these are pictures of people's pets in their homes.
