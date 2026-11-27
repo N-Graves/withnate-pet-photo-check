@@ -41,7 +41,7 @@ export const renderAssessment = (a: Assessment): HTMLElement =>
         ? h(
             "p",
             { class: "ppc-note" },
-            "Send it anyway if it is the only one you have — it is your pet and sometimes there is only the one photo. This is a guide, not a rule.",
+            "Send it anyway if it is the only one you have — sometimes there is only the one photo. This is a guide, not a rule.",
           )
         : null,
     ),
